@@ -266,7 +266,7 @@ Now we fit the same model using EP via `fit_ep()`. The key arguments are:
 - **`conv_tol`**: convergence tolerance on the natural parameter updates.
 
 We start with `K = 2` sites, so that each site handles 10 of the 20 groups:
-```{r}
+```{r ep_result}
 ep_result <- fit_ep(
   data = sim$data,
   group_column = "c",

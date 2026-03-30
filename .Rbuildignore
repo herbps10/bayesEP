@@ -4,3 +4,5 @@
 ^\.vscode$
 ^LICENSE\.md$
 ^\.github$
+^docs$
+^build_docs\.R$
