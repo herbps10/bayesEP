@@ -10,7 +10,7 @@ described in [Vehtari et al. 2020](https://jmlr.org/papers/v21/18-817.html).
 
 ## Installation
 
-You can install the development version of `bayesEP` from [Github](https://github.com/bayesEP) with:
+You can install the development version of `bayesEP` from [Github](https://github.com/herbps10/bayesEP) with:
 
 ```r
 # install.packages("pak")

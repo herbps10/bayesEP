@@ -239,22 +239,17 @@ test_that("fip ep recovers approximate posterior with Stan", {
       cavity_Sigma <- diag(3)
     }
 
-    group_index <- data.frame(group = unique(data$group))
-    group_index$ci <- 1:nrow(group_index)
-
-    data$ci <- group_index$ci[base::match(data$group, group_index$group)]
-
     stan_data <- list(
       N = nrow(data),
       y = data$y,
-      group_index = data$ci,
+      group_index = data$c,
       C = nrow(group_index),
       use_cavity = as.integer(use_cavity),
       cavity_mu = cavity_mu,
       cavity_Sigma = cavity_Sigma
     )
 
-    fit <- model$sample(
+    samples <- model$sample(
       data = stan_data,
       chains = 4,
       parallel_chains = 4,
@@ -267,9 +262,7 @@ test_that("fip ep recovers approximate posterior with Stan", {
     )
 
     list(
-      phi = posterior::as_draws_matrix(fit$draws("phi")),
-      fit = fit,
-      group_index = group_index
+      phi = posterior::as_draws_matrix(samples$draws("phi"))
     )
   }
 

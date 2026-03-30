@@ -11,7 +11,14 @@ RoxygenNote: 7.3.3
 Imports: 
     checkmate
 Suggests: 
+    cmdstanr,
+    ggplot2,
+    gridExtra,
+    knitr,
     MASS,
     posterior,
+    rmarkdown,
+    scales,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
+VignetteBuilder: knitr

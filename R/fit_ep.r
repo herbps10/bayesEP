@@ -261,9 +261,10 @@ fit_ep <- function(
     n_skipped <- 0
     n_failed <- 0
 
+    cat("    > Site: ")
     for (k in 1:K) {
       if (verbose == TRUE) {
-        cat(sprintf("--- Starting iteration %d site %d/%d\n", iter, k, K))
+        cat(sprintf("%d ", k))
       }
       result <- fit_site(
         site_data = site_data_list[[k]],
@@ -328,7 +329,7 @@ fit_ep <- function(
 
     if (verbose == TRUE) {
       cat(sprintf(
-        "--- Finished iteration %d (max_delta_Q = %.1f, max_delta_r = %0.1f) ---\n",
+        "\n--- Finished iteration %d (max_delta_Q = %.1f, max_delta_r = %0.1f) ---\n",
         iter,
         max_delta_Q,
         max_delta_r
