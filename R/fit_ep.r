@@ -152,10 +152,10 @@
 #'     cavity_Sigma = cavity_Sigma
 #'   )
 #'
-#'   fit <- model$sample(data = stan_data, chains = 4, refresh = 0)
+#'   samples <- model$sample(data = stan_data, chains = 4, refresh = 0)
 #'
 #'   list(
-#'     phi = posterior::as_draws_matrix(fit$draws("phi")),
+#'     phi = posterior::as_draws_matrix(samples$draws("phi")),
 #'     fit = fit
 #'   )
 #' }
