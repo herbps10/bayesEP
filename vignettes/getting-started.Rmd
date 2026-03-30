@@ -31,6 +31,7 @@ of the data. This makes it possible to fit large hierarchical models without nee
 For a complete description of EP for approximating Bayesian models, see [Vehtari et al. (2020)](http://jmlr.org/papers/v21/18-817.html). 
 
 The basic workflow is:
+
 1. **Define a model** with group-specific and shared (hierarchical) parameters.
 2. **Write a fitting function** that can fit the model to a subset of the data, optionally using a cavity distribution as the prior on shared parameters.
 3. **Call `fit_ep()`**, which handles the distributing data to each site, running the core EP loop, computing the cavity distributions, and monitoring convergence.
