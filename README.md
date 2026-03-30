@@ -1,5 +1,9 @@
 # bayesEP
 
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/herbps10/bayesEP/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/herbps10/bayesEP/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
 ## Overview
 This package implements a flexible framework for Bayesian Expectation Propagation (EP) based on the algorithm 
 described in [Vehtari et al. 2020](https://jmlr.org/papers/v21/18-817.html).
