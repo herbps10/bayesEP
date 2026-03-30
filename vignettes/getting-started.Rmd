@@ -2,7 +2,7 @@
 title: "Getting started with bayesEP"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Hierarchical Linear Regression}
+  %\VignetteIndexEntry{Getting started with bayesEP}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -28,7 +28,7 @@ This vignette illustrates how to use `bayesEP` to fit a hierarchical Bayesian mo
 that approximates the posterior distribution of shared (hierarchical) parameters by iteratively combining information from independently fitted subsets
 of the data. This makes it possible to fit large hierarchical models without needing to run MCMC on the full dataset. 
 
-For a complete description of EP for approximating Bayesian models, see [Vehtari et al. (2020)][http://jmlr.org/papers/v21/18-817.html]. 
+For a complete description of EP for approximating Bayesian models, see [Vehtari et al. (2020)](http://jmlr.org/papers/v21/18-817.html). 
 
 The basic workflow is:
 1. **Define a model** with group-specific and shared (hierarchical) parameters.
@@ -237,11 +237,12 @@ full_result$samples$cmdstan_diagnose()
 
 Posterior marginal densities for the shared parameters:
 ```{r full_posteriors, fig.cap = "Full joint model posterior densities (blue). Vertical dashed lines show true parameter values."}
+color_scheme <- c("Full MCMC" = "steelblue", "EP" = "firebrick", "Truth" = "darkgray")
 phi_df <- as.data.frame(full_result$phi)
 
 make_phi_plot <- function(phi_df, col_name, true_val, xlab) {
   ggplot(phi_df, aes(x = .data[[col_name]])) + 
-    geom_density(color = "steelblue") + 
+    geom_density(color = color_scheme["Full MCMC"]) + 
     geom_vline(xintercept = true_val, linetype = "dashed") +
     labs(x = xlab)
 }
@@ -306,15 +307,18 @@ make_comparison_plot <- function(phi_df, col_name, ep_mu, ep_sd, true_val, xlab)
     geom_density(aes(color = "Full MCMC")) +
     geom_function(aes(color = "EP"), fun = function(x) dnorm(x, ep_mu, ep_sd)) +
     geom_vline(xintercept = true_val, linetype = "dashed", alpha = 0.5) +
-    scale_color_manual(values = c("Full MCMC" = "steelblue", "EP" = "firebrick", "Truth" = "darkgray")) +
+    scale_color_manual(values = color_scheme) +
     labs(x = xlab, y = NULL, color = NULL) +
     theme(legend.position = "bottom")
 }
 
 grid.arrange(
-  make_comparison_plot(phi_df, "phi[1]", ep_result$mu[1], sqrt(ep_result$Sigma[1, 1]), sim$true_phi[1], expression(mu[beta])),
-  make_comparison_plot(phi_df, "phi[2]", ep_result$mu[2], sqrt(ep_result$Sigma[2, 2]), sim$true_phi[2], expression(log(sigma[beta]))),
-  make_comparison_plot(phi_df, "phi[3]", ep_result$mu[3], sqrt(ep_result$Sigma[3, 3]), sim$true_phi[3], expression(log(sigma))),
+  make_comparison_plot(phi_df, "phi[1]", ep_result$mu[1], sqrt(ep_result$Sigma[1, 1]), 
+                       sim$true_phi[1], expression(mu[beta])),
+  make_comparison_plot(phi_df, "phi[2]", ep_result$mu[2], sqrt(ep_result$Sigma[2, 2]),
+                       sim$true_phi[2], expression(log(sigma[beta]))),
+  make_comparison_plot(phi_df, "phi[3]", ep_result$mu[3], sqrt(ep_result$Sigma[3, 3]),
+                       sim$true_phi[3], expression(log(sigma))),
   nrow = 1
 )
 ```
@@ -334,16 +338,40 @@ ep_beta <- do.call(rbind, lapply(ep_result$tilted_fits[[final_iteration]], summa
 
 full_beta <- full_result$samples$summary("beta")
 full_beta$group <- 1:nrow(full_beta)
+
+true_beta <- data.frame(
+  group = 1:length(sim$true_beta), 
+  beta = sim$true_beta
+)
 ```
 
 ```{r tilted_fits_plot, caption = "Comparison of full posterior densities (blue), EP Gaussian approximations (red), and true group-specific means (gray)."}
 ggplot(ep_beta, aes(x = median, y = factor(group))) +
-  geom_point(aes(x = beta, color = "Truth"), data = data.frame(group = 1:length(sim$true_beta), beta = sim$true_beta)) +
-  geom_point(aes(color = "EP"), position = position_nudge(y = 0.1)) +
-  geom_errorbarh(aes(xmin = q5, xmax = q95, color = "EP"), width = 0, position = position_nudge(y = 0.1)) +
-  geom_point(aes(color = "Full MCMC"), data = full_beta, position = position_nudge(y = -0.1)) +
-  geom_errorbarh(aes(xmin = q5, xmax = q95, color = "Full MCMC"), data = full_beta, width = 0, position = position_nudge(y = -0.1)) +
-  scale_color_manual(values = c("Full MCMC" = "steelblue", "EP" = "firebrick", "Truth" = "darkgray")) +
+  geom_point(
+    aes(x = beta, color = "Truth"), 
+    data = true_beta
+  ) +
+  geom_point(
+    aes(color = "EP"), 
+    position = position_nudge(y = 0.1)
+  ) +
+  geom_errorbarh(
+    aes(xmin = q5, xmax = q95, color = "EP"), 
+    width = 0, 
+    position = position_nudge(y = 0.1)
+  ) +
+  geom_point(
+    aes(color = "Full MCMC"), 
+    data = full_beta, 
+    position = position_nudge(y = -0.1)
+  ) +
+  geom_errorbarh(
+    aes(xmin = q5, xmax = q95, color = "Full MCMC"), 
+    data = full_beta, 
+    width = 0, 
+    position = position_nudge(y = -0.1)
+  ) +
+  scale_color_manual(values = color_scheme) +
   labs(x = expression(beta[c]), y = "Group", color = NULL)
 
 ```
