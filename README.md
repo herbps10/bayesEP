@@ -17,6 +17,9 @@ You can install the development version of `bayesEP` from [Github](https://githu
 pak::pak("herbps10/bayesEP")
 ```
 
+## Getting started
+See the [Getting started with BayesEP](http://herbsusmann.com/bayesEP/getting-started.html) vignette.
+
 ## References
 - Vehtari, A., Gelman, A., Sivula, T., Jylänki, P., Tran, D., Sahai, S., Blomstedt, P., Cunningham, J. P., Schiminovich, D., and Robert, C. P. (2020).
   Expectation Propagation as a Way of Life: A Framework for Bayesian Inference
