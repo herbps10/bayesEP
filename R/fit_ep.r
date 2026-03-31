@@ -187,7 +187,8 @@ fit_ep <- function(
   max_iter = 20,
   conv_tol = 0.1,
   verbose = TRUE,
-  save_all_tilted_fits = FALSE
+  save_all_tilted_fits = FALSE,
+  workers = NULL
 ) {
   ##### Argument Checks #####
   checkmate::assert_data_frame(data, min.rows = 1)
@@ -203,6 +204,15 @@ fit_ep <- function(
   checkmate::assert_number(conv_tol, lower = 0, finite = TRUE)
   checkmate::assert_flag(verbose)
   checkmate::assert_flag(save_all_tilted_fits)
+  checkmate::assert_class(workers, c("Pool", "R6"), null.ok = TRUE)
+  if (!is.null(workers)) {
+    if (!requireNamespace("clustermq", quiety = TRUE)) {
+      stop("The 'clustermq' package is required when providing a worker pool.")
+    }
+  }
+
+  # For now eta is hardcoded
+  eta <- 1
 
   ##### Assign groups to sites #####
   group_names <- sort(unique(data[[group_column]]))
@@ -232,6 +242,20 @@ fit_ep <- function(
   ep_log <- list()
   tilted_fits <- list(list())
 
+  ##### Send data to workers if parallel #####
+  if (!is.null(workers)) {
+    if (verbose) {
+      cat("Sending data and functions to workers...\n")
+    }
+
+    workers$env(list(
+      fit_site = fit_site,
+      fit_model = fit_model,
+      d = d,
+      eta = eta
+    ))
+  }
+
   ##### EP Loop #####
   iter <- 1
   converged <- FALSE
@@ -255,34 +279,34 @@ fit_ep <- function(
       ))
     }
 
+    # Fit all the sites
+    site_results <- ep_iteration(
+      site_data_list = site_data_list,
+      d = d,
+      Q_global = Q_global,
+      r_global = r_global,
+      Q_sites = Q_sites,
+      r_sites = r_sites,
+      eta = 1,
+      fit_model = fit_model,
+      workers = workers,
+      verbose = verbose
+    )
+
+    # Aggregate site results
     total_delta_Q <- matrix(0, d, d)
     total_delta_r <- rep(0, d)
     n_success <- 0
     n_skipped <- 0
     n_failed <- 0
 
-    cat("    > Site: ")
     for (k in 1:K) {
-      if (verbose == TRUE) {
-        cat(sprintf("%d ", k))
-      }
-      result <- fit_site(
-        site_data = site_data_list[[k]],
-        d = d,
-        Q_global = Q_global,
-        r_global = r_global,
-        Q_site = Q_sites[[k]],
-        r_site = r_sites[[k]],
-        eta = 1,
-        fit_model = fit_model
-      )
+      result <- site_results[[k]]
 
       if (result$status == "success") {
         n_success <- n_success + 1
-
         total_delta_Q <- total_delta_Q + result$delta_Q
         total_delta_r <- total_delta_r + result$delta_r
-
         Q_sites[[k]] <- Q_sites[[k]] + delta * result$delta_Q
         r_sites[[k]] <- r_sites[[k]] + delta * result$delta_r
       } else if (result$status == "skipped") {
@@ -290,7 +314,6 @@ fit_ep <- function(
       } else if (result$status == "failed") {
         n_failed <- n_failed + 1
       }
-
       if (save_all_tilted_fits) {
         tilted_fits[[iter]][[k]] <- result
       } else {
@@ -329,8 +352,11 @@ fit_ep <- function(
 
     if (verbose == TRUE) {
       cat(sprintf(
-        "\n--- Finished iteration %d (max_delta_Q = %.1f, max_delta_r = %0.1f) ---\n",
+        "--- Finished iteration %d (%d success, %d skipped, %d failed, max_delta_Q = %.1f, max_delta_r = %0.1f) ---\n",
         iter,
+        n_success,
+        n_skipped,
+        n_failed,
         max_delta_Q,
         max_delta_r
       ))
@@ -352,4 +378,80 @@ fit_ep <- function(
     Sigma = Sigma_global,
     tilted_fits = tilted_fits
   ))
+}
+
+
+# Fit all sites for a single EP iteration
+ep_iteration <- function(site_data_list, d, Q_global, r_global, Q_sites, r_sites, eta, fit_model, workers, verbose) {
+  K <- length(site_data_list)
+
+  if (is.null(workers)) {
+    # Sequential mode
+    if (verbose) {
+      cat("    > Site: ")
+    }
+    results <- lapply(1:K, function(k) {
+      if (verbose == TRUE) {
+        cat(sprintf("%d ", k))
+      }
+      result <- fit_site(
+        site_data = site_data_list[[k]],
+        d = d,
+        Q_global = Q_global,
+        r_global = r_global,
+        Q_site = Q_sites[[k]],
+        r_site = r_sites[[k]],
+        eta = eta,
+        fit_model = fit_model
+      )
+    })
+
+    if (verbose) {
+      cat("\n")
+    }
+
+    results
+  } else {
+    # Parallel mode using clustermq workers
+    results <- tryCatch(
+      {
+        clustermq::Q(
+          fun = fit_site,
+          site_data = site_data_list,
+          Q_site = Q_sites,
+          r_site = r_sites,
+          const = list(
+            d = d,
+            Q_global = Q_global,
+            r_global = r_global,
+            eta = eta,
+            fit_model = fit_model
+          ),
+          workers = workers,
+          fail_on_error = FALSE
+        )
+      },
+      error = function(e) {
+        stop(sprintf("clustermq error: %s.", e$message))
+      }
+    )
+
+    # Handle any individual failed jobs and convert to our format for failed jobs
+    results <- lapply(results, function(r) {
+      if (inherits(r, "error") || inherits(r, "condition")) {
+        warning(sprintf("Worker error: %s", r))
+        list(
+          delta_Q = matrix(0, d, d),
+          delta_r = rep(0, d),
+          status = "failed",
+          fit = NULL,
+          phi_draws = NULL
+        )
+      } else {
+        r
+      }
+    })
+
+    results
+  }
 }

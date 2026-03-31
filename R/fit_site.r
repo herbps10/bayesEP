@@ -49,7 +49,6 @@ fit_site <- function(site_data, d, Q_global, r_global, Q_site, r_site, eta = 1, 
   checkmate::assert_function(fit_model)
 
   ###### Form cavity distribution #####
-
   Q_cavity <- Q_global - eta * Q_site
   r_cavity <- r_global - eta * r_site
 

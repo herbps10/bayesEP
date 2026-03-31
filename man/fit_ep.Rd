@@ -13,7 +13,8 @@ fit_ep(
   max_iter = 20,
   conv_tol = 0.1,
   verbose = TRUE,
-  save_all_tilted_fits = FALSE
+  save_all_tilted_fits = FALSE,
+  workers = NULL
 )
 }
 \arguments{
@@ -191,10 +192,10 @@ my_fitter <- function(data, use_cavity = FALSE, cavity_mu = NULL, cavity_Sigma =
     cavity_Sigma = cavity_Sigma
   )
 
-  fit <- model$sample(data = stan_data, chains = 4, refresh = 0)
+  samples <- model$sample(data = stan_data, chains = 4, refresh = 0)
 
   list(
-    phi = posterior::as_draws_matrix(fit$draws("phi")),
+    phi = posterior::as_draws_matrix(samples$draws("phi")),
     fit = fit
   )
 }

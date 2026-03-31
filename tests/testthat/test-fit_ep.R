@@ -32,7 +32,7 @@ make_failing_fit_model <- function(d = 3) {
 }
 
 skip_if_no_stan <- function() {
-  if (!requireNamespace("cmdstanr", quiety = TRUE)) {
+  if (!requireNamespace("cmdstanr", quietly = TRUE)) {
     skip("cmdstanr not available")
   }
   tryCatch(
@@ -89,6 +89,40 @@ test_that("fit_ep rejects data with fewer than 2 groups", {
     d = 3,
     fit_model = fm
   ))
+})
+
+test_that("fit_ep rejects invalid workers argument", {
+  dat <- simulate_test_data(C = 4)
+  fm <- make_fit_model()
+  expect_error(
+    fit_ep(
+      data = dat,
+      group_column = "group",
+      K = 2,
+      d = 3,
+      fit_model = fm,
+      max_iter = 1,
+      verbose = FALSE,
+      workers = "not a worker pool"
+    )
+  )
+})
+
+test_that("fit_ep works with workers = NULL (sequential)", {
+  dat <- simulate_test_data(C = 4)
+  fm <- make_fit_model()
+  result <- fit_ep(
+    data = dat,
+    group_column = "group",
+    K = 2,
+    d = 3,
+    fit_model = fm,
+    max_iter = 1,
+    verbose = FALSE,
+    workers = NULL
+  )
+  expect_type(result, "list")
+  expect_length(result$mu, 3)
 })
 
 ##### Test return structure #####
@@ -166,7 +200,7 @@ test_that("fit_ep works with character group labels", {
 })
 
 ##### Test integration with Stan #####
-test_that("fip ep recovers approximate posterior with Stan", {
+test_that("fit_ep recovers approximate posterior with Stan", {
   skip_on_ci()
   skip_if_no_stan()
 
@@ -239,10 +273,14 @@ test_that("fip ep recovers approximate posterior with Stan", {
       cavity_Sigma <- diag(3)
     }
 
+    group_index <- data.frame(group = sort(unique(data$group)))
+    group_index$ci <- 1:nrow(group_index)
+    data$ci <- group_index$ci[base::match(data$group, group_index$group)]
+
     stan_data <- list(
       N = nrow(data),
       y = data$y,
-      group_index = data$c,
+      group_index = data$ci,
       C = nrow(group_index),
       use_cavity = as.integer(use_cavity),
       cavity_mu = cavity_mu,
