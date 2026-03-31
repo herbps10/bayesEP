@@ -104,6 +104,8 @@
 #' @param save_all_tilted_fits Logical. If `TRUE`, the tilted distribution fit
 #'   results from every iteration is stored. If `FALSE` (default), only the
 #'   final iteration fits are stored.
+#' @param workers A preconfigured clustermq worker pool. Each EP iteration will
+#'   be submitted to the worker pool, if available, for parallel computation.
 #'
 #' @return A named list with the following elements:
 #' \describe{

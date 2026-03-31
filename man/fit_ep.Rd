@@ -39,6 +39,9 @@ identifies group membership.}
 \item{save_all_tilted_fits}{Logical. If \code{TRUE}, the tilted distribution fit
 results from every iteration is stored. If \code{FALSE} (default), only the
 final iteration fits are stored.}
+
+\item{workers}{A preconfigured clustermq worker pool. Each EP iteration will
+be submitted to the worker pool, if available, for parallel computation.}
 }
 \value{
 A named list with the following elements:
